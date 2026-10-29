@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meus links</title>
+<style>
+:root{--bg:#f3f1ec;--surface:#fff;--text:#1d2a2a;--muted:#6b7776;--accent:#2f6f6a;--line:#dcd8cf;--danger:#b3412f;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141b1b;--surface:#1c2626;--text:#e7eeee;--muted:#8fa09e;--accent:#6fbfb7;--line:#2c3a3a;--danger:#e0806e}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:17px;line-height:1.45}
+main{max-width:560px;margin:0 auto;padding:20px 16px 48px}
+h1{font-family:Georgia,"Times New Roman",serif;font-size:1.9rem;margin:8px 0 16px;font-weight:700}
+form{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px}
+input{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:11px 12px;width:100%}
+input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{font:inherit;cursor:pointer;border:0;border-radius:8px;padding:11px 14px}
+.add{background:var(--accent);color:#fff;font-weight:600}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .add{color:#10201f}}
+.search{margin:18px 0 8px}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid var(--line)}
+.info{flex:1;min-width:0}
+.name{font-weight:600;overflow-wrap:anywhere}
+.url{color:var(--accent);font-size:.9rem;text-decoration:none;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.del{background:transparent;color:var(--danger);padding:8px 10px}
+.empty{color:var(--muted);padding:24px 4px}
+.msg{color:var(--danger);font-size:.9rem;min-height:1.2em;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 8px}
+.chip{background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.92rem}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip.on{color:#10201f}}
+.tag{display:inline-block;margin-top:4px;font-size:.8rem;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 10px}
+</style>
+</head>
+<body>
+<main>
+<h1>Meus links</h1>
+<form id="f">
+<input id="n" placeholder="Nome" autocomplete="off" required>
+<input id="u" placeholder="Link" inputmode="url" autocapitalize="off" autocomplete="off" required>
+<input id="cat" list="cl" placeholder="Categoria (você mesmo cria)" autocomplete="off">
+<datalist id="cl"></datalist>
+<p class="msg" id="m"></p>
+<button class="add" type="submit">Salvar</button>
+</form>
+<input class="search" id="q" placeholder="Buscar pelo nome">
+<div class="chips" id="c"></div>
+<ul id="l"></ul>
+</main>
+<script>
+var KEY="meus-links",items=[],cur="";
+function chips(){
+ var cats=[];items.forEach(function(i){if(i.c&&cats.indexOf(i.c)<0)cats.push(i.c)});
+ cats.sort();if(cur&&cats.indexOf(cur)<0)cur="";
+ var box=document.getElementById("c");box.innerHTML="";
+ var dl=document.getElementById("cl");dl.innerHTML="";
+ cats.forEach(function(c){var o=document.createElement("option");o.value=c;dl.appendChild(o)});
+ if(!cats.length)return;
+ ["Todos"].concat(cats).forEach(function(c){var b=document.createElement("button");b.type="button";b.className="chip"+((c==="Todos"?"":c)===cur?" on":"");b.textContent=c;b.onclick=function(){cur=c==="Todos"?"":c;render()};box.appendChild(b)});
+}
+try{items=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){items=[]}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(items))}catch(e){}}
+function render(){
+ var q=document.getElementById("q").value.toLowerCase(),l=document.getElementById("l");
+ l.innerHTML="";
+ chips();var shown=items.filter(function(i){return i.n.toLowerCase().indexOf(q)>-1&&(!cur||i.c===cur)});
+ if(!shown.length){var e=document.createElement("li");e.className="empty";e.textContent=items.length?"Nada encontrado.":"Nenhum link salvo ainda. Adicione o primeiro acima.";l.appendChild(e);return}
+ shown.forEach(function(i){
+  var li=document.createElement("li"),d=document.createElement("div");d.className="info";
+  var n=document.createElement("div");n.className="name";n.textContent=i.n;
+  var a=document.createElement("a");a.className="url";a.href=i.u;a.target="_blank";a.rel="noopener noreferrer";a.textContent=i.u;
+  d.appendChild(n);d.appendChild(a);
+  if(i.c){var t=document.createElement("span");t.className="tag";t.textContent=i.c;d.appendChild(t)}
+  var b=document.createElement("button");b.className="del";b.textContent="Apagar";b.setAttribute("aria-label","Apagar "+i.n);
+  b.onclick=function(){items=items.filter(function(x){return x.id!==i.id});save();render()};
+  li.appendChild(d);li.appendChild(b);l.appendChild(li);
+ });
+}
+document.getElementById("f").onsubmit=function(ev){
+ ev.preventDefault();
+ var n=document.getElementById("n").value.trim(),u=document.getElementById("u").value.trim(),m=document.getElementById("m");
+ if(!/^https?:\/\//i.test(u))u="https://"+u;
+ try{new URL(u)}catch(e){m.textContent="Esse link não parece válido.";return}
+ m.textContent="";
+ items.unshift({id:Date.now(),n:n,u:u,c:document.getElementById("cat").value.trim()});save();render();
+ document.getElementById("n").value="";document.getElementById("u").value="";
+};
+document.getElementById("q").oninput=render;
+render();
+</script>
+</body>
+</html>
